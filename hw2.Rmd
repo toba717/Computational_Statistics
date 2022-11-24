@@ -1,0 +1,251 @@
+---
+title: "STATS 102A Homework 2"
+subtitle: "Winter 2022"
+author: |
+  | Takao Oba
+date: "Due Janurary 30, 2022"
+output:
+  pdf_document:
+    latex: xelatex
+    number_section: T
+header-includes:
+  - \usepackage{float} 
+  - \renewcommand\thesubsection{\thesection(\alph{subsection})}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Sourcing the Functions {-}
+
+```{r}
+source("205615894_stats102a_hw2.R")
+```
+
+# Teacher's Gradebook
+
+The formatting of this question takes 15% of your HW 2 grade; the efficiency, accuracy, and robustness of your function account for another 60%. If your function violates any instructions of this assignment, it will not be graded.
+
+## Requirements for `messy_impute()` and `tidy_impute()` {-}
+
+1. Draw flowcharts (or algorithms) of the main functions sufficiently complete, clear, and concise enough to enable a person to accurately implement the function in any programming languages they are adept with using.
+2. Write the function(s) which accurately implements the algorithm(s) as described or requested.
+3. Include the error-handling to ensure your function(s) work properly.
+
+One scenario which naturally creates non-tidy data is a teacher’s gradebook. Table 1 shows an example with five homework and five quizzes.
+
+| UID | Homework_1 | Homework_2 | ... | Homework_5 | Quiz_1 | ... | Quiz_5 |
+| :---: | :----------: | :----------: | :---: | :----------: | :------: | :---: | :------: |
+| 123456787 | 70 | 90 | ... | 80 | 76 | ... | 70 |
+| 123456788 | 91 | 85 | ... | 73 | 90 | ... | 80 |
+| 123456789 | 60 | 71 | ... | 78 | 88 | ... | 73 |
+Table: An example of a teacher’s gradebook.
+
+## Dataset Simulation
+
+Create a simulated dataset in R ^[Please check how to use `runif()`.] called `gradebook` that represents a possible gradebook in the basic format as Table 1:
+
+- Each row of the gradebook should contain all measurements for a student.
+- Each column should contain scores for one assignment.
+- The last column should be "Quiz_5."
+
+The simulated gradebook should contain the grades for 100 students and scores (out of 100) for 5 homework and 5 quizzes. __Set the seed for simulating your data with your UID__.
+
+## Dataset Randomization
+
+Write R code in RMarkdown file to randomly replace 10% of Homework_5 and Quiz_5 by NA respectively, and then use `is.na()` in conjunction with `sum()` to show your results.
+
+```{r}
+set.seed(205615894)
+index <- sample(1:n, n * 0.1)
+index
+
+gradebook[index, ]$hw5 = NA
+sum(is.na(gradebook$hw5))
+
+set.seed(205615894 + 1)
+index2 <- sample(1:n, n * 0.1)
+index2
+gradebook[index2, ]$quiz5 = NA
+sum(is.na(gradebook$quiz5))
+```
+
+## `messy_impute()`
+
+Write a function `messy_impute()` that imputes missing values in the gradebook. Please also present your algorithm or flowchart to answer this question in the RMarkdown file.
+
+```{r, fig.cap="General stucture of a flowchart.", out.width="50%", out.height="50%", fig.pos="H", fig.align='center'}
+knitr::include_graphics("flowchart_messy_impute.png")
+```
+
+Note: 
+
+- _Imputation_ is the process of replacing missing values by estimated values. The simplest (far from preferred) method to impute values is to replace missing values by the most typical value, say the mean.
+- Assume the format of the gradebook is fixed (five homework and five quizzes), but NA values may occur in any assignments except for UID.
+- The `messy_impute()` function should have at least three arguments and `...`:
+  - A data frame contains the gradebook as specified in the example.
+  – A center argument should be a character object indicating the impute functions (mean or median).
+  – A margin argument should be an integer (1 or 2) indicating either the function imputes the missing values by row/student (1) or by column/assignment (2). If choosing by row, the function should process homework and quizzes separately.
+- The function should return the imputed data frame (or tibble).
+
+## Test Cases
+
+Select two students missing Homework_5 and two students missing Quiz_5. Please use these cases to demonstrate your function in the R markdown file. Here are some suggested cases but not limited to while grading.
+
+```{r}
+# We will select student # 3 and student # 33 for those who had missing Homework_5
+# We will select student # 17 and student # 27 for those who had missing Quiz_5
+
+head(gradebook)
+summary(gradebook[, c(6, 11)])
+
+# Test Case 1
+messy_impute(gradebook, "mean", 1)
+summary(messy_impute(gradebook, "mean", 1)[,c(6, 11)])
+
+# Test Case 2
+messy_impute(gradebook, "median", 2)
+summary(messy_impute(gradebook, "median", 2)[,c(6, 11)])
+
+messy_impute(gradebook, "mean", 1, trim = 0.25)
+summary(messy_impute(gradebook, "mean", 1, trim = 0.25)[,c(6, 11)])
+
+#Notice how the number of NAs for the three cases became 0 compared to the number of NAs of 10 seen in "summary(gradebook[, c(6, 11)])".
+
+```
+
+## Data Format Conversion
+
+Write R code in the RMarkdown to convert the gradebook into the tidy format. Name this object `gradebook_tidy`.
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(tidyverse)
+# Your code here
+gradebook_tidy <- gradebook %>%
+  pivot_longer(hw1:quiz5, names_to = "Item", values_to = "Grade") %>%
+arrange(Item, Grade) %>% select(UID, Item, Grade)
+gradebook_tidy
+```
+
+## `tidy_impute()`
+
+Write a function `tidy_impute()` that imputes missing values in gradebook_tidy object. The `tidy_impute()` function should have the same arguments as in the `messy_impute()` function. You should return an imputed `gradebook_tidy` object. Please also present your algorithm or flowchart to answer this question in the R markdown file.
+
+```{r, fig.cap="General stucture of a flowchart.", out.width="50%", out.height="50%", fig.pos="H", fig.align='center'}
+knitr::include_graphics("flowchart_tidy_impute.png")
+```
+
+Note: Don't convert `gradebook_tidy` object to be a messy format or reuse your `messy_impute()` in any steps of your `tidy_impute()`.
+
+## Test Cases
+
+Use the cases you select from (d) to demonstrate your function in the RMarkdown file.
+
+```{r}
+(tidy_impute(gradebook_tidy, "mean", 1) %>% group_by(UID) %>%
+    summarise(na = sum(is.na(Grade))))[1:5, ]
+tidy_impute(gradebook_tidy, "mean", 1) %>% group_by(Item) %>%
+summarise(na = sum(is.na(Grade)))
+
+
+tidy_impute(gradebook_tidy, "mean", 1)
+tidy_impute(gradebook_tidy, "median", 2)
+tidy_impute(gradebook_tidy, "mean", 1, trim = 0.25)
+
+
+```
+
+# Short Answer
+
+The formatting takes 10% of your homework grade. The accuracy takes 15% of your grade. 
+
+### (a)
+Please find three examples in which data might naturally be presented in a messy (non-tidy) way. For each example, include the context, observations, and variables that would be recorded. Showcase a small sample, say 10 observations, for each example. You may search online for context, but you __MUST__ cite your sources. Please don’t make up data on your own.
+
+```{r}
+library(datasets)
+```
+
+__Answer__:
+
+Data set 1: USJudgeRatings
+```{r}
+head(USJudgeRatings, 10)
+?USJudgeRatings
+```
+
+This data set provides the Lawyers' ratings of state judges who are in the US Superior Court in 1977. 
+The variable that would be recorded in this data set is the Name, Rating type and the scores.  
+This data set is non-tidy or messy because the variables are not in its own column. This data set has its column associated with the specific rating types such as CONT which indicates the number of contracts of lawyer with judge, INTG which indicates the judicial integrity, and ETC. 
+Source : New Haven Register, 14 January, 1977 (from John Hartigan).
+
+Data set 2: USArrests
+```{r}
+head(USArrests, 10)
+?USArrests
+```
+
+This data set illustrates the statistics for the in arrests per 100,000 residents in the 50 states of United States of America in year 1973. The crimes that are listed in the data set are assault, murder, and rape.
+The variable that would be recorded in this data set are states, population per state, the type of crime, and the arrests per 100,000 people. 
+This data set is non-tidy or messy because the variables are not in its own column. As we can see above, the column names include the type of crimes such as murder, assault, and rape instead of the actual variable which is the crime type. 
+Source: World Almanac and Book of facts 1975. (Crime rates).
+
+Statistical Abstracts of the United States 1975, p.20, (Urban rates), possibly available as https://books.google.ch/books?id=zl9qAAAAMAAJ&pg=PA20.
+
+Data set 3: relig_income
+```{r}
+head(relig_income, 10)
+?relig_income
+```
+
+This data set was generated from the pew religion and income survey which asked the participants their income and religion. 
+The variables in this data set is the religion, income, and the frequency for the given religion and income. 
+This data-set is a messy (non-tidy) data set because the variables are not in its own column. In this given data set, the frequency is the inner cells and the income intervals are the column names, but in reality, these two should be switched. 
+Source: New Haven Register, 14 January, 1977 (from John Hartigan).
+
+
+### (b)
+
+For each of the three examples in (a), describe how the data might be better presented in a tidy way. Please use tidyverse functions to reorganize the small sample datasets in (a) into tidy format.
+
+__Answer__:
+
+Data set 1: USJudgeRatings
+
+As we discussed in part a, the variables are not in its own columns. To convert the data set into a more tidy way, we must fix this. 
+```{r}
+USJudgeRatings_tidy <- USJudgeRatings %>% mutate(Name = rownames(USJudgeRatings)) %>% gather(`CONT`, `INTG`, `DMNR`, `DILG`, `CFMG`, `DECI`, `PREP`, `FAMI`, `ORAL`, `WRIT`, `PHYS`, `RTEN`, key = "rating", value = "score")
+head(USJudgeRatings_tidy)
+head(USJudgeRatings)
+```
+
+Now in this newly modified data set called USJudgeRatings_tidy, we can see that all of the columns are unique, distinct variables. We used the mutate function to first add a column for the names of the state judges since in this data set, the names were not built in. Then we used the gather function to gather together the variable of the ratings which was spread across the columns in the USJudgeRatings dataset. 
+
+
+Data set 2: USArrests
+
+As we discussed in part a, the variables are not in its own columns. To convert the data set into a more tidy way, we must fix this.
+```{r}
+USArrests_tidy <- USArrests %>% mutate(State = rownames(USArrests)) %>% gather(`Murder`, `Assault`, `Rape`, key = "Crime Type", value = "Frequency (in 100,000 ppl)")
+
+USArrests_tidy <- USArrests_tidy[, c(2, 1, 3, 4)]
+head(USArrests_tidy)
+```
+
+Again, the newly modified data set called USArrests_tidy showcases the states, population for the corresponding state, four different crime types, and the frequency for the different crime types in a tidy manner. I utilized the mutate function again because the state name were not listed as a variable in the original data frame. Next, I used the gather functions since the crime type was spread along the columns of the data frame. 
+
+
+Data set 3: relig_income
+
+As we discussed in part a, the variables are not in its own columns. To convert the data set into a more tidy way, we must fix this.
+```{r}
+relig_income_tidy <- relig_income %>% pivot_longer(`<$10k`:`Don't know/refused`, names_to = "income", values_to = "frequency")
+head(relig_income)
+head(relig_income_tidy)
+```
+
+Again, the newly modified data set called relig_income_tidy provides a tidy visualization of the variables: religion, income, and frequency. Unlike the old data set in which the intervals for the income was categorized in the column names, in this new data set, we can all see it in each cells of the data frame as an observation. 
+I used the pivot_longer function, which is similar to the gather function, but in this case the name of the column were complex such as <$10k, so instead of writing out all of the column names into the gather function, I gathered together all of the categories of the variable income into one column using pivot_longer function. 
