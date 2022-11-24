@@ -1,0 +1,263 @@
+---
+title: "STATS 102A Homework 3"
+subtitle: "Winter 2022"
+author: |
+  | Takao Oba
+date: \today
+output:
+  pdf_document:
+    latex: xelatex
+    number_section: T
+header-includes:
+  - \usepackage{float} 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Sourcing the Functions {-}
+
+```{r}
+source("205615894_stats102a_hw3.R")
+
+```
+
+# Relational Data
+
+## Requirements {-}
+
+Consider the entity-relationship diagram given in Homework3.pdf and corresponding CSV files. Please use the functions from the `dplyr` package to answer the questions below.
+
+```{r}
+library(readr)
+stock <- read_csv("stock.csv")
+recipe <- read_csv("recipe.csv")
+food_item <- read_csv("food_item.csv")
+ingredient <- read_csv("ingredient.csv")
+library(dplyr)
+library(tidyr)
+
+glimpse(stock)
+
+glimpse(recipe)
+
+glimpse(food_item)
+
+glimpse(ingredient)
+```
+
+Note: 
+
+- The efficiency and accuracy of your code account for 40% of this assignment.
+- Don’t use any control statements.
+
+## Answers {-}
+
+a. Write R code to return the food items required to cook the recipe “Spaghetti and Meatballs”.
+
+```{r}
+ingredient %>% filter(recipe == "Spaghetti and Meatballs")
+
+```
+
+The food items required to cook the recipe "Spaghetti and meatballs" are Pasta, Meatballs, Tomato Sauce, and Onions.
+
+
+b. Write R code to return all recipes that contain both “Bread” and “Onions”.
+
+```{r}
+ingredient %>% 
+  spread(key = "food_item", value = "weight (oz)") %>%
+  filter((!is.na(Bread)) & (!is.na(Onions)))
+```
+
+The recipes that contain both "Bread" and "Onions" are Burger and Cheese Soup.
+
+
+c. Write R code to return the recipes and the average calories that contain the food items are of type “Wheat product” or type “Meat”.
+
+```{r}
+# head(food_item)
+# head(ingredient)
+
+
+food_item %>%
+  left_join(ingredient, by = c("item" = "food_item")) %>%
+  filter(type == "Wheat product" | type == "Meat") %>%
+  group_by(recipe) %>%
+  mutate(avg = mean(calories * `weight (oz)`)) %>%
+  select(recipe, avg) %>% 
+  distinct()
+```
+
+The recipe that contain the food items of type "Wheat product" or type "Meat" are Spaghetti and Meatballs, Burger, and Cheese Soup and their average calories are 700, 575, and 500 calories respectively.
+
+
+d. Write R code to return the food items and their prices for all items of type “Wheat product” sold at “Food warehouse”.
+
+```{r}
+# head(stock)
+# head(food_item)
+
+food_item %>% 
+  left_join(stock, by = c("item"= "food_item")) %>% 
+  filter(type == "Wheat product" & shop == "Food warehouse") %>% 
+  select(item, `price (US dollars per lb)`)
+```
+
+The food items with type "Wheat product" and also sold at "Food warehouse" are Pasta and Bread and their prices are \$1.5 per lb and \$2.5 per lb respectively.
+
+
+e. Write R code to return the average price of food items per type. For example, `(Diary, Cheese, 6.75)`.
+
+```{r}
+# head(stock)
+# head(food_item)
+
+food_item %>% 
+  left_join(stock, by = c("item" = "food_item")) %>% group_by(type) %>% 
+  mutate(`average price` = mean(`price (US dollars per lb)`)) %>% 
+  select(type, item, `average price`) %>% 
+  distinct()
+```
+
+This shows the average price of food items per type. In row 5, we can see `(Diary, Cheese, 6.75)`.
+
+
+# Regex Golf 
+
+You are going to produce several examples of regex and trying to get the __lowest__ score you can using the scoring function `regex_golf()` provided below. The scoring works as follows, you will get:
+
+1. 10 points for every word incorrectly matched or not matched.
+2. 1 point for every character in your regex expression.
+
+```{r, echo=T}
+library(stringr)
+regex_golf <- function(x, y, regex) {
+  xmatch <- str_extract_all(x, regex) == x
+  matched_x <- x[xmatch]
+  unmatched_x <- x[!xmatch]
+  ymatch <- str_extract_all(y, regex) == y
+  matched_y <- y[ymatch]
+  unmatched_y <- y[!ymatch]
+  penalty <- 10 * sum(!xmatch, ymatch)
+  score <- nchar(regex) + penalty
+  list(score = score, matched_x = matched_x,
+  unmatched_x = unmatched_x, matched_y = matched_y,
+  unmatched_y = unmatched_y)
+}
+```
+
+## Requirements {-}
+
+Write regex patterns to play Regex Golf on the following lists. For each pattern, store the pattern as a variable named in the following way `pat_x` where the $x$ is replaced by the number of the exercise you are doing. You should save these patterns in your .R file.
+
+Note: 
+
+- In your output file, for each problem, report your score, along with displaying the strings in x you failed to match and the strings in y you did match.
+- All of the strings you will need to match or not are in the files `wordlists.RDS` and `wordlists.RData` on Bruin Learn (use whichever you prefer).
+- __Please choose 9 of the following 12 problems to do__. You are NOT expected to do all of these perfectly. In fact, on some of the more challenging ones, it is possible you will struggle to find a pattern which selects every string in the $x$ list. THIS IS OKAY.
+- These are openly available problems which do have solutions available online. DO NOT search these out. That is not the point of this exercise. Rather, the point is for you to play with regular expressions to get a better feel for them and to flex your creative thinking muscles.
+- Any solution you submit you will be expected to be able to explain. If you do not understand your solution well enough to explain it, do not submit it. This question accounts for 60% of this assignment.
+
+## Answers {-}
+
+__Please select 9 out of the 12 problems given -- make sure to name the regex in the form of `pat_x`, where `x` is the question number.__
+
+## Selection 1: Warmup 
+
+```{r}
+words <- readRDS("wordlists.RDS")
+# words$Warmup
+
+regex_golf(words$Warmup$x, words$Warmup$y, pat_1)$score
+regex_golf(words$Warmup$x, words$Warmup$y, pat_1)$unmatched_x
+regex_golf(words$Warmup$x, words$Warmup$y, pat_1)$matched_y
+```
+
+## Selection 2: Anchors
+
+```{r}
+# words$Anchors
+
+regex_golf(words$Anchors$x, words$Anchors$y, pat_2)$score
+regex_golf(words$Anchors$x, words$Anchors$y, pat_2)$unmatched_x
+regex_golf(words$Anchors$x, words$Anchors$y, pat_2)$matched_y
+```
+
+## Selection 3: Ranges
+
+```{r}
+# words$Ranges
+
+regex_golf(words$Ranges$x, words$Ranges$y, pat_3)$score
+regex_golf(words$Ranges$x, words$Ranges$y, pat_3)$unmatched_x
+regex_golf(words$Ranges$x, words$Ranges$y, pat_3)$matched_y
+```
+
+## Selection 4: Backrefs
+
+```{r}
+# words$Backrefs
+
+regex_golf(words$Backrefs$x, words$Backrefs$y, pat_4)$score
+regex_golf(words$Backrefs$x, words$Backrefs$y, pat_4)$unmatched_x
+regex_golf(words$Backrefs$x, words$Backrefs$y, pat_4)$matched_y
+```
+
+## Selection 5: Abba
+
+```{r}
+# words$Abba
+#y has palindrome so we must not match these 
+
+regex_golf(words$Abba$x, words$Abba$y, pat_5)$score
+regex_golf(words$Abba$x, words$Abba$y, pat_5)$unmatched_x
+regex_golf(words$Abba$x, words$Abba$y, pat_5)$matched_y
+```
+
+## Selection 6: A man, a plan
+
+```{r}
+# words$`A man, a plan`
+#first and last letter are same except for sporous in y
+
+regex_golf(words$`A man, a plan`$x, words$`A man, a plan`$y, pat_6)$score
+regex_golf(words$`A man, a plan`$x, words$`A man, a plan`$y, pat_6)$unmatched_x
+regex_golf(words$`A man, a plan`$x, words$`A man, a plan`$y, pat_6)$matched_y
+
+```
+
+## Selection 7: Four
+
+```{r}
+# words$Four
+#m(a).....x(a)y(a)z(a)...
+
+regex_golf(words$Four$x, words$Four$y, pat_7)$score
+regex_golf(words$Four$x, words$Four$y, pat_7)$unmatched_x
+regex_golf(words$Four$x, words$Four$y, pat_7)$matched_y
+```
+
+## Selection 8: Order
+
+```{r}
+# words$Order
+#letter in word in alphabetical order
+#five or six letter word, except for oriole in y
+
+regex_golf(words$Order$x, words$Order$y, pat_8)$score
+regex_golf(words$Order$x, words$Order$y, pat_8)$unmatched_x
+regex_golf(words$Order$x, words$Order$y, pat_8)$matched_y
+```
+
+## Selection 9 : Glob
+
+```{r}
+# words$Glob
+
+regex_golf(words$Glob$x, words$Glob$y, pat_9)$score
+regex_golf(words$Glob$x, words$Glob$y, pat_9)$unmatched_x
+regex_golf(words$Glob$x, words$Glob$y, pat_9)$matched_y
+```
