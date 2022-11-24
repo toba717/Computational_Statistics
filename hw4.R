@@ -34,7 +34,7 @@ pqnumber <- function(sign, p, q, nums){
 }  
 
 
-####################################################################################
+###################################################################################
 
 is_pqnumber <- function(x){
   # A function that returns true if input is a pqnumber, false if elsewise
